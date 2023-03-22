@@ -27,7 +27,7 @@ def delete_info(A: np.ndarray, num_to_delete: int, n: int) -> np.ndarray:
         A_modified = np.copy(A)
         A_modified -= np.diag(A.diagonal())  # eliminate diagonal elements
         to_delete = np.random.choice(upper_tri_indices[0].shape[0], size=num_to_delete, replace=False)
-        A_modified[upper_tri_indices[0][to_delete], upper_tri_indices[0][to_delete]] = 0
+        A_modified[upper_tri_indices[0][to_delete], upper_tri_indices[1][to_delete]] = 0
         A_modified = np.triu(A_modified) + np.triu(A_modified).T
         # graph must be connected for the synchronization problem
         is_connected = connected_components(csr_matrix(A_modified), directed=False, return_labels=False) == 1
@@ -75,7 +75,7 @@ def test_different_n():
 
 
 def test_different_noise(dimensions: list, miss_rate: float):
-    sigmas = np.logspace(0, 4, 10) * 1e-5
+    sigmas = np.logspace(0, 4, 5) * 1e-5
     for n in dimensions:
         print(f'n = {n}')
         errors_hom_synch = list()
@@ -99,8 +99,8 @@ def test_different_noise(dimensions: list, miss_rate: float):
 
 
 def test_incomplete_information(dimensions: list, sigmas: list):
-    incomplete_percent = np.logspace(-1, -0.05, 20)  # from 0.1 to 0.89
-    plt.figure()
+    incomplete_percent = np.linspace(0.1, 0.95, 8)
+    plt.figure(figsize=(10, 8))
     for n, sigma in itertools.product(dimensions, sigmas):
         print(f'n = {n}, sigma = {sigma}')
         errors_hom_synch = list()
@@ -113,8 +113,8 @@ def test_incomplete_information(dimensions: list, sigmas: list):
             err_ho, err_sp = err_ho / 10, err_sp / 10
             errors_hom_synch.append(err_ho)
             errors_spanning_synch.append(err_sp)
-        plt.loglog(incomplete_percent * 100, errors_hom_synch, label=f'spectral sol, n = {n}, sigma = {sigma}')
-        plt.loglog(incomplete_percent * 100, errors_spanning_synch, label=f'spanning tree, n = {n}, sigma = {sigma}')
+        plt.semilogy(incomplete_percent * 100, errors_hom_synch, label=f'spectral sol, n = {n}, sigma = {sigma}')
+        plt.semilogy(incomplete_percent * 100, errors_spanning_synch, label=f'spanning tree, n = {n}, sigma = {sigma}')
     plt.xlabel('% missing data')
     plt.ylabel('error')
     plt.legend()
@@ -123,5 +123,5 @@ def test_incomplete_information(dimensions: list, sigmas: list):
 
 if __name__ == '__main__':
     test_different_n()
-    test_different_noise([50, 100, 500], 0.8)
-    test_incomplete_information([100], [1e-5, 1e-4, 1e-3])
+    # test_different_noise([50, 100, 200], 0.8)
+    # test_incomplete_information([100], [1e-4, 5e-4, 1e-3])
