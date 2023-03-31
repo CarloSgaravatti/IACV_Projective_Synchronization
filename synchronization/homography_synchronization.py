@@ -1,4 +1,5 @@
 import numpy as np
+import synchronization.utils as utils
 
 
 def homography_synch(Z: np.array, A: np.array) -> (np.ndarray, int):
@@ -8,10 +9,7 @@ def homography_synch(Z: np.array, A: np.array) -> (np.ndarray, int):
     w, v = np.linalg.eig(np.kron(iD, np.eye(3)) @ Z)
     Q = v[:, np.argsort(w)[-3:]]  # top-3 eigenvectors
     root = np.argmax(A.sum(axis=1))
-    Q_first_inv = np.linalg.inv(Q[3*root: 3*(root + 1), :])
-    for i in range(n):
-        Q[3*i:3*(i+1), :] = Q[3*i:3*(i+1), :] @ Q_first_inv
-    Q = np.real(Q)
+    Q = np.real(utils.scale_matrices(Q, 3, root))
 
     H = np.empty([0, 3])
     for i in range(n):

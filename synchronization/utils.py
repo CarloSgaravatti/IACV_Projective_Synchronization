@@ -3,7 +3,7 @@ import numpy as np
 
 def scale_matrices(X: np.ndarray, d: int, ref: int):
     ref_matrix_inv = np.linalg.inv(X[d*ref: d*(ref + 1), :])
-    X_scaled = np.zeros(X.shape)
+    X_scaled = np.zeros(X.shape, dtype=complex)
     n = int(X.shape[0] / d)
     for i in range(n):
         X_scaled[d*i: d*(i + 1), :] = X[d*i: d*(i + 1), :] @ ref_matrix_inv

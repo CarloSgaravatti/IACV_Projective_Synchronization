@@ -44,24 +44,6 @@ def test_n(n: int, d: int, sigma=None, miss_rate=None):
         A = delete_info(A, num_to_delete, n)
     U_hom_synch, root = homography_synch(Z, A)
     U_spanning_synch = spanning_tree_sync(Z, A, root)
-    err_hom = 0
-    err_spanning = 0
-    for i in range(n):
-        err_hom += np.linalg.norm((U_hom_synch[3*i:3*(i+1), :] @ X[3*root:3*(root+1), :]) - X[3*i:3*(i+1), :])
-        err_spanning += np.linalg.norm((U_spanning_synch[3 * i:3 * (i + 1), :]
-                                        @ X[3*root:3*(root+1), :]) - X[3 * i:3 * (i + 1), :])
-    return err_hom / n, err_spanning / n
-
-
-def test_n_v2(n: int, d: int, sigma=None, miss_rate=None):
-    Z, A, X = build_z(n, d)
-    if sigma is not None:
-        Z += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
-    if miss_rate is not None and miss_rate > 0:
-        num_to_delete = int(np.sum(np.arange(n - 1)) * miss_rate)
-        A = delete_info(A, num_to_delete, n)
-    U_hom_synch, root = homography_synch(Z, A)
-    U_spanning_synch = spanning_tree_sync(Z, A, root)
     X_scaled = utils.scale_matrices(X, d, root)
     err_hom = utils.get_error(U_hom_synch, X_scaled, d, distance_type='angle')
     err_spanning = utils.get_error(U_spanning_synch, X_scaled, d, distance_type='angle')
@@ -69,28 +51,6 @@ def test_n_v2(n: int, d: int, sigma=None, miss_rate=None):
 
 
 def test_different_n():
-    dimensions = np.logspace(1, 3, 20, dtype=np.int32)
-    errors_hom_synch = list()
-    errors_spanning_synch = list()
-    for n_nodes in dimensions:
-        print(f'n = {n_nodes}')
-        err_ho, err_sp = 0, 0
-        for _ in range(10):
-            res = test_n(n_nodes, 3)
-            err_ho, err_sp = err_ho + res[0], err_sp + res[1]
-        err_ho, err_sp = err_ho / 10, err_sp / 10
-        errors_hom_synch.append(err_ho)
-        errors_spanning_synch.append(err_sp)
-    plt.figure()
-    plt.loglog(dimensions, errors_hom_synch, 'o-', label='spectral sol')
-    plt.loglog(dimensions, errors_spanning_synch, 'o-', label='spanning tree')
-    plt.xlabel('number of nodes')
-    plt.ylabel('error')
-    plt.legend()
-    plt.show()
-
-
-def test_different_n_v2():
     dimensions = np.logspace(1, 2.7, 15, dtype=np.int32)  # from 10 to 500
     errors_hom_synch = list()
     errors_spanning_synch = list()
@@ -98,9 +58,9 @@ def test_different_n_v2():
         print(f'n = {n_nodes}')
         err_ho, err_sp = 0, 0
         for _ in range(20):
-            res = test_n_v2(n_nodes, 3, sigma=1e-3)
+            res = test_n(n_nodes, 3, sigma=1e-3)
             err_ho, err_sp = err_ho + res[0], err_sp + res[1]
-        err_ho, err_sp = err_ho / 10, err_sp / 10
+        err_ho, err_sp = err_ho / 20, err_sp / 20
         errors_hom_synch.append(err_ho)
         errors_spanning_synch.append(err_sp)
     plt.figure()
@@ -113,7 +73,7 @@ def test_different_n_v2():
 
 
 def test_different_noise(dimensions: list, miss_rate: float):
-    sigmas = np.logspace(0, 6, 5) * 1e-6
+    sigmas = np.concatenate([[0], np.logspace(0, 6, 7) * 1e-6], axis=0)
     for n in dimensions:
         print(f'n = {n}')
         errors_hom_synch = list()
@@ -121,14 +81,17 @@ def test_different_noise(dimensions: list, miss_rate: float):
         for sigma in sigmas:
             err_ho, err_sp = 0, 0
             for _ in range(20):
-                res = test_n_v2(n, 3, miss_rate=miss_rate, sigma=sigma)
+                res = test_n(n, 3, miss_rate=miss_rate, sigma=sigma)
                 err_ho, err_sp = err_ho + res[0], err_sp + res[1]
-            err_ho, err_sp = err_ho / 10, err_sp / 10
+            err_ho, err_sp = err_ho / 20, err_sp / 20
             errors_hom_synch.append(err_ho)
             errors_spanning_synch.append(err_sp)
         plt.figure()
-        plt.loglog(sigmas, errors_hom_synch, 'o-', label=f'spectral sol, n = {n}')
-        plt.loglog(sigmas, errors_spanning_synch, 'o-', label=f'spanning tree, n = {n}')
+        plt.plot(sigmas, errors_hom_synch, 'o-', label=f'spectral sol, n = {n}')
+        plt.plot(sigmas, errors_spanning_synch, 'o-', label=f'spanning tree, n = {n}')
+        plt.xlim(left=-1e-7)
+        plt.yscale('log')
+        plt.xscale('symlog', linthresh=1e-6)
         plt.xlabel('noise')
         plt.ylabel('error')
         plt.title(f'Synchronization with %{int(miss_rate * 100)} of missing edge, and {n} nodes')
@@ -146,9 +109,9 @@ def test_incomplete_information(dimensions: list, sigmas: list):
         for miss_rate in incomplete_percent:
             err_ho, err_sp = 0, 0
             for _ in range(20):
-                res = test_n_v2(n, 3, sigma, miss_rate)
+                res = test_n(n, 3, sigma, miss_rate)
                 err_ho, err_sp = err_ho + res[0], err_sp + res[1]
-            err_ho, err_sp = err_ho / 10, err_sp / 10
+            err_ho, err_sp = err_ho / 20, err_sp / 20
             errors_hom_synch.append(err_ho)
             errors_spanning_synch.append(err_sp)
         plt.semilogy(incomplete_percent * 100, errors_hom_synch, 'o-', label=f'spectral sol, n = {n}, sigma = {sigma}')
@@ -160,7 +123,6 @@ def test_incomplete_information(dimensions: list, sigmas: list):
 
 
 if __name__ == '__main__':
-    # test_different_n()
-    # test_different_n_v2()
+    test_different_n()
     test_different_noise([50, 80, 120], 0.8)
     test_incomplete_information([100], [1e-4, 5e-3, 1e-3])

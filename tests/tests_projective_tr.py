@@ -4,8 +4,7 @@ from synchronization.projective_synchronization import projective_synch
 from homography_synchronization import delete_info
 import synchronization.utils as utils
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
+import itertools
 
 
 def build_z_projective_tr(n: int, d: int) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
@@ -40,6 +39,14 @@ def test(n: int, sigma: float, miss_rate: float):
     return err_pr_real, err_pr_imag, err_spanning
 
 
+def get_mean_error(n: int, miss_rate: float, sigma: float, num_repeat: int):
+    err_pr_real, err_pr_imag, err_sp = 0, 0, 0
+    for _ in range(20):
+        res = test(n, miss_rate=miss_rate, sigma=sigma)
+        err_pr_real, err_pr_imag, err_sp = err_pr_real + res[0], err_pr_imag + res[1], err_sp + res[2]
+    return err_pr_real / 20, err_pr_imag / 20,  err_sp / 20
+
+
 def test_different_noise(dimensions: list, miss_rate: float):
     sigmas = np.concatenate([[0], np.logspace(0, 6, 7) * 1e-6], axis=0)
     for n in dimensions:
@@ -48,11 +55,7 @@ def test_different_noise(dimensions: list, miss_rate: float):
         errors_pr_imag_synch = list()
         errors_spanning_synch = list()
         for sigma in sigmas:
-            err_pr_real, err_pr_imag, err_sp = 0, 0, 0
-            for _ in range(20):
-                res = test(n, miss_rate=miss_rate, sigma=sigma)
-                err_pr_real, err_pr_imag, err_sp = err_pr_real + res[0], err_pr_imag + res[1],  err_sp + res[2]
-            err_pr_real, err_pr_imag, err_sp = err_pr_real / 20, err_pr_imag / 20,  err_sp / 20
+            err_pr_real, err_pr_imag, err_sp = get_mean_error(n, miss_rate, sigma, 20)
             errors_pr_real_synch.append(err_pr_real)
             errors_pr_imag_synch.append(err_pr_imag)
             errors_spanning_synch.append(err_sp)
@@ -70,5 +73,28 @@ def test_different_noise(dimensions: list, miss_rate: float):
         plt.show()
 
 
+def test_missing_info(dimensions: list, sigmas: list):
+    incomplete_percent = np.linspace(0, 0.98, 10)
+    plt.figure(figsize=(10, 8))
+    for n, sigma in itertools.product(dimensions, sigmas):
+        print(f'n = {n}, sigma = {sigma}')
+        errors_pr_real_synch = list()
+        errors_pr_imag_synch = list()
+        errors_spanning_synch = list()
+        for miss_rate in incomplete_percent:
+            err_pr_real, err_pr_imag, err_sp = get_mean_error(n, miss_rate, sigma, 20)
+            errors_pr_real_synch.append(err_pr_real)
+            errors_pr_imag_synch.append(err_pr_imag)
+            errors_spanning_synch.append(err_sp)
+        plt.semilogy(incomplete_percent * 100, errors_pr_imag_synch, 'o-', label=f'spectral (imag) sol, n = {n}, sigma = {sigma}')
+        plt.semilogy(incomplete_percent * 100, errors_pr_real_synch, 'o-', label=f'spectral (real) sol, n = {n}, sigma = {sigma}')
+        plt.semilogy(incomplete_percent * 100, errors_spanning_synch, 'o-', label=f'spanning tree, n = {n}, sigma = {sigma}')
+    plt.xlabel('% missing data')
+    plt.ylabel('error')
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
     test_different_noise([50, 80, 100], 0.8)
+    test_missing_info([100], [1e-3])
