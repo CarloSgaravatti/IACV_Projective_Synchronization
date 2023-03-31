@@ -41,10 +41,10 @@ def test(n: int, sigma: float, miss_rate: float):
 
 def get_mean_error(n: int, miss_rate: float, sigma: float, num_repeat: int):
     err_pr_real, err_pr_imag, err_sp = 0, 0, 0
-    for _ in range(20):
+    for _ in range(num_repeat):
         res = test(n, miss_rate=miss_rate, sigma=sigma)
         err_pr_real, err_pr_imag, err_sp = err_pr_real + res[0], err_pr_imag + res[1], err_sp + res[2]
-    return err_pr_real / 20, err_pr_imag / 20,  err_sp / 20
+    return err_pr_real / num_repeat, err_pr_imag / num_repeat,  err_sp / num_repeat
 
 
 def test_different_noise(dimensions: list, miss_rate: float):
