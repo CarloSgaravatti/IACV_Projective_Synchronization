@@ -3,11 +3,22 @@ import numpy as np
 
 def scale_matrices(X: np.ndarray, d: int, ref: int):
     ref_matrix_inv = np.linalg.inv(X[d*ref: d*(ref + 1), :])
-    X_scaled = np.zeros(X.shape, dtype=complex)
+    X_scaled = np.zeros(X.shape, dtype=X.dtype)
     n = int(X.shape[0] / d)
     for i in range(n):
         X_scaled[d*i: d*(i + 1), :] = X[d*i: d*(i + 1), :] @ ref_matrix_inv
     return X_scaled
+
+
+def normalize_matrices(X: np.ndarray):
+    X_normalized = np.zeros(X.shape, dtype=X.dtype)
+    d = X.shape[1]
+    n = int(X.shape[0] / d)
+    for i in range(n):
+        x_vec = X[d*i: d*(i + 1), :].reshape((d ** 2, 1))
+        norm_factor = np.linalg.norm(x_vec) + x_vec.sum()
+        X_normalized[d*i: d*(i + 1), :] = X[d*i: d*(i + 1), :] / norm_factor
+    return X_normalized
 
 
 def calculate_matrix_angle(X1: np.ndarray, X2: np.ndarray, d: int):

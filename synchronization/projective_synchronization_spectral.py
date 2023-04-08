@@ -1,5 +1,5 @@
 import numpy as np
-import synchronization.utils as utils
+from synchronization import utils
 
 
 def projective_synch(Z: np.array, A: np.array, remove_imag=False, root=None):

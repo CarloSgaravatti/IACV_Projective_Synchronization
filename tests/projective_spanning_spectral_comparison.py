@@ -1,6 +1,6 @@
 import numpy as np
 from synchronization.spanning_tree_synchronization import spanning_tree_sync
-from synchronization.projective_synchronization import projective_synch
+from synchronization.projective_synchronization_spectral import projective_synch
 from homography_synchronization import delete_info
 import synchronization.utils as utils
 import matplotlib.pyplot as plt
@@ -21,11 +21,11 @@ def build_z_projective_tr(n: int, d: int) -> (np.ndarray, np.ndarray, np.ndarray
         X = np.concatenate([X, X_i_complex], axis=0)
         X_b = np.concatenate([X_b, np.linalg.inv(X_i_complex)], axis=1)
     A = np.ones((n, n))
-    return X @ X_b, A, X, X_not_scaled, X_not_scaled @ X_not_scaled_b
+    return X @ X_b, A, X_not_scaled, X_not_scaled @ X_not_scaled_b
 
 
 def test(n: int, sigma: float, miss_rate: float):
-    Z, A, X, X_not_scaled, Z_not_scaled = build_z_projective_tr(n, 4)
+    Z, A, X_not_scaled, Z_not_scaled = build_z_projective_tr(n, 4)
     Z += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
     Z_not_scaled += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
     A = delete_info(A, int(miss_rate * np.sum(np.arange(n - 1))), n)
