@@ -14,4 +14,4 @@ def multi_source_propagation(Z: np.ndarray, A: np.ndarray):
     for root in roots:
         sol = utils.scale_matrices(spanning_tree_sync(Z, A, root), d, max_degree_node)
         solutions = np.concatenate([solutions, [utils.normalize_matrices(sol)]])
-    return solutions.sum(axis=0) / 10, max_degree_node, solutions[-2], solutions[-1]
+    return solutions.sum(axis=0) / 10, max_degree_node
