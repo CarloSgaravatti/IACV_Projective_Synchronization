@@ -3,16 +3,36 @@ from synchronization.spanning_tree_synchronization import spanning_tree_sync
 from synchronization.projective_synchronization_spectral import projective_synch
 from synchronization.multi_source_propagation import multi_source_propagation
 from homography_synchronization import delete_info
-from projective_spanning_spectral_comparison import build_z_projective_tr, get_mean_error
+from projective_spanning_spectral_comparison import build_z_projective_tr
 import synchronization.utils as utils
 import matplotlib.pyplot as plt
 
 
-def test(n: int, sigma: float, miss_rate: float):
+def add_outliers(Z_scaled: np.ndarray, Z_not_scaled: np.ndarray, A: np.ndarray, num_outliers: int, n: int):
+    valid_transformations = np.triu_indices(n)
+    valid_transformations = [(i, j) for i in valid_transformations[0] for j in valid_transformations[1] if A[i, j] == 1]
+    outliers = np.random.choice(len(valid_transformations), size=num_outliers, replace=False)
+    for k in outliers:
+        i, j = valid_transformations[k]
+        random_homography = np.random.rand(4, 4)
+        Z_not_scaled[4 * i: 4 * (i + 1), 4 * j: 4 * (j + 1)] = random_homography
+        det = np.linalg.det(random_homography)
+        Z_scaled[4 * i: 4 * (i + 1), 4 * j: 4 * (j + 1)] = random_homography / np.power(det, 0.25, dtype=complex)
+    return Z_scaled, Z_not_scaled
+
+
+def test(n: int, sigma: float, miss_rate: float, outliers_percent: float):
     Z, A, X_not_scaled, Z_not_scaled = build_z_projective_tr(n, 4)
-    Z += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
+    # Z += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
     Z_not_scaled += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
-    A = delete_info(A, int(miss_rate * np.sum(np.arange(n - 1))), n)
+    for i in range(n):
+        for j in range(n):
+            det_zij = np.power(np.linalg.det(Z_not_scaled[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4]), 0.25, dtype=complex)
+            Z[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4] = Z_not_scaled[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4] / det_zij
+    num_elements = np.sum(np.arange(n - 1))
+    A = delete_info(A, int(miss_rate * num_elements), n)
+    if outliers_percent > 0.0:
+        Z, Z_not_scaled = add_outliers(np.copy(Z), np.copy(Z_not_scaled), A, int(outliers_percent * num_elements), n)
     U_msp, max_degree_node = multi_source_propagation(Z_not_scaled, A)
     X_scaled = utils.scale_matrices(X_not_scaled, 4, max_degree_node)
     U_spectral, _ = projective_synch(Z, A, root=max_degree_node)
@@ -23,7 +43,7 @@ def test(n: int, sigma: float, miss_rate: float):
     return err_msp, err_spectral, err_spanning
 
 
-def test_different_noise(n: int, miss_rate: float, num_repeat: int):
+def test_different_noise(n: int, miss_rate: float, num_repeat: int, outliers_percent=0.0):
     sigmas = np.concatenate([[0], np.logspace(0, 6, 7) * 1e-6], axis=0)
     errors_spanning = list()
     errors_msp = list()
@@ -31,16 +51,16 @@ def test_different_noise(n: int, miss_rate: float, num_repeat: int):
     for sigma in sigmas:
         err_msp, err_spectral, err_spanning = 0, 0, 0
         for _ in range(num_repeat):
-            res = test(n, miss_rate=miss_rate, sigma=sigma)
+            res = test(n, miss_rate=miss_rate, sigma=sigma, outliers_percent=outliers_percent)
             err_msp, err_spectral, err_spanning = err_msp + res[0], err_spectral + res[1], err_spanning + res[2]
         err_msp, err_spectral, err_spanning = err_msp / num_repeat, err_spectral / num_repeat, err_spanning / num_repeat
         errors_msp.append(err_msp)
         errors_spectral.append(err_spectral)
         errors_spanning.append(err_spanning)
     plt.figure()
-    plt.plot(sigmas, errors_msp, 'o-', label=f'MSP')
-    plt.plot(sigmas, errors_spectral, 'o-', label=f'spectral')
-    plt.plot(sigmas, errors_spanning, 'o-', label=f'spanning')
+    plt.plot(sigmas, errors_msp, 'o-', label='MSP')
+    plt.plot(sigmas, errors_spectral, 'o-', label='spectral')
+    plt.plot(sigmas, errors_spanning, 'o-', label='spanning')
     plt.yscale('log')
     plt.xscale('symlog', linthresh=1e-6)
     plt.xlabel('noise')
@@ -51,5 +71,38 @@ def test_different_noise(n: int, miss_rate: float, num_repeat: int):
     plt.show()
 
 
+def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
+    outliers_percent = np.linspace(0, 0.8, 10)
+    errors_spanning, errors_msp, errors_spectral = list(), list(), list()
+    std_spanning, std_msp, std_spectral = list(), list(), list()
+    for outliers in outliers_percent:
+        err_msp, err_spectral, err_spanning = np.array([]), np.array([]), np.array([])
+        for _ in range(num_repeat):
+            res = test(n, miss_rate=miss_rate, sigma=noise, outliers_percent=outliers)
+            err_msp = np.append(err_msp, res[0])
+            err_spectral = np.append(err_spectral, res[1])
+            err_spanning = np.append(err_spanning, res[2])
+        errors_msp.append(np.mean(err_msp))
+        errors_spectral.append(np.mean(err_spectral))
+        errors_spanning.append(np.mean(err_spanning))
+        std_spanning.append(np.std(err_msp))
+        std_msp.append(np.std(err_spectral))
+        std_spectral.append(np.std(err_spanning))
+    outliers_percent = outliers_percent * 100
+    plt.figure()
+    plt.plot(outliers_percent, errors_msp, 'bo-', label='MSP')
+    plt.fill_between(outliers_percent, np.array(errors_msp) - std_msp, np.array(errors_msp) + std_msp, color='b', alpha=0.2)
+    plt.plot(outliers_percent, errors_spectral, 'ro-', label='spectral')
+    plt.fill_between(outliers_percent, np.array(errors_spectral) - std_msp, np.array(errors_spectral) + std_msp, color='r', alpha=0.2)
+    plt.plot(outliers_percent, errors_spanning, 'go-', label='spanning')
+    plt.fill_between(outliers_percent, np.array(errors_spanning) - std_msp, np.array(errors_spanning) + std_msp, color='g', alpha=0.2)
+    plt.xlabel('outliers percentage')
+    plt.ylabel('error')
+    plt.title(f'{n} nodes, {int(miss_rate * 100)}% of missing edges, noise = {noise}')
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    test_different_noise(100, 0.8, 20)
+    # test_different_noise(100, 0.8, 20)
+    test_outliers(100, 0.8, 20, 1e-3)
