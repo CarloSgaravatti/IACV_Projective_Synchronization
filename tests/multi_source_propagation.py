@@ -76,6 +76,7 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
     errors_spanning, errors_msp, errors_spectral = list(), list(), list()
     std_spanning, std_msp, std_spectral = list(), list(), list()
     for outliers in outliers_percent:
+        print(outliers)
         err_msp, err_spectral, err_spanning = np.array([]), np.array([]), np.array([])
         for _ in range(num_repeat):
             res = test(n, miss_rate=miss_rate, sigma=noise, outliers_percent=outliers)
@@ -85,17 +86,17 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
         errors_msp.append(np.mean(err_msp))
         errors_spectral.append(np.mean(err_spectral))
         errors_spanning.append(np.mean(err_spanning))
-        std_spanning.append(np.std(err_msp))
-        std_msp.append(np.std(err_spectral))
-        std_spectral.append(np.std(err_spanning))
+        std_spanning.append(np.std(err_spanning))
+        std_msp.append(np.std(err_msp))
+        std_spectral.append(np.std(err_spectral))
     outliers_percent = outliers_percent * 100
     plt.figure()
     plt.plot(outliers_percent, errors_msp, 'bo-', label='MSP')
     plt.fill_between(outliers_percent, np.array(errors_msp) - std_msp, np.array(errors_msp) + std_msp, color='b', alpha=0.2)
     plt.plot(outliers_percent, errors_spectral, 'ro-', label='spectral')
-    plt.fill_between(outliers_percent, np.array(errors_spectral) - std_msp, np.array(errors_spectral) + std_msp, color='r', alpha=0.2)
+    plt.fill_between(outliers_percent, np.array(errors_spectral) - std_spectral, np.array(errors_spectral) + std_spectral, color='r', alpha=0.2)
     plt.plot(outliers_percent, errors_spanning, 'go-', label='spanning')
-    plt.fill_between(outliers_percent, np.array(errors_spanning) - std_msp, np.array(errors_spanning) + std_msp, color='g', alpha=0.2)
+    plt.fill_between(outliers_percent, np.array(errors_spanning) - std_spanning, np.array(errors_spanning) + std_spanning, color='g', alpha=0.2)
     plt.xlabel('outliers percentage')
     plt.ylabel('error')
     plt.title(f'{n} nodes, {int(miss_rate * 100)}% of missing edges, noise = {noise}')
@@ -104,5 +105,6 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
 
 
 if __name__ == '__main__':
-    # test_different_noise(100, 0.8, 20)
-    test_outliers(100, 0.8, 20, 1e-3)
+    #test_different_noise(100, 0.8, 20)
+    #test_outliers(100, 0.5, 30, 1e-4)
+    test_outliers(100, 0.8, 30, 1e-4)
