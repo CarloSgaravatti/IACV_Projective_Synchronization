@@ -15,24 +15,27 @@ def add_outliers(Z_scaled: np.ndarray, Z_not_scaled: np.ndarray, A: np.ndarray, 
     for k in outliers:
         i, j = valid_transformations[k]
         random_homography = np.random.rand(4, 4)
+        random_homography_inverse = np.linalg.inv(random_homography)
         Z_not_scaled[4 * i: 4 * (i + 1), 4 * j: 4 * (j + 1)] = random_homography
+        Z_not_scaled[4 * j: 4 * (j + 1), 4 * i: 4 * (i + 1)] = random_homography_inverse
         det = np.linalg.det(random_homography)
         Z_scaled[4 * i: 4 * (i + 1), 4 * j: 4 * (j + 1)] = random_homography / np.power(det, 0.25, dtype=complex)
+        Z_scaled[4 * j: 4 * (j + 1), 4 * i: 4 * (i + 1)] = random_homography_inverse * np.power(det, 0.25, dtype=complex)
     return Z_scaled, Z_not_scaled
 
 
 def test(n: int, sigma: float, miss_rate: float, outliers_percent: float):
     Z, A, X_not_scaled, Z_not_scaled = build_z_projective_tr(n, 4)
-    # Z += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
     Z_not_scaled += np.random.randn(Z.shape[0], Z.shape[1]) * sigma
     for i in range(n):
         for j in range(n):
             det_zij = np.power(np.linalg.det(Z_not_scaled[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4]), 0.25, dtype=complex)
             Z[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4] = Z_not_scaled[i * 4: (i + 1) * 4, j * 4: (j + 1) * 4] / det_zij
     num_elements = np.sum(np.arange(n - 1))
-    A = delete_info(A, int(miss_rate * num_elements), n)
+    num_to_delete = int(miss_rate * num_elements)
+    A = delete_info(A, num_to_delete, n)
     if outliers_percent > 0.0:
-        Z, Z_not_scaled = add_outliers(np.copy(Z), np.copy(Z_not_scaled), A, int(outliers_percent * num_elements), n)
+        Z, Z_not_scaled = add_outliers(np.copy(Z), np.copy(Z_not_scaled), A, int(outliers_percent * (num_elements - num_to_delete)), n)
     U_msp, max_degree_node = multi_source_propagation(Z_not_scaled, A)
     X_scaled = utils.scale_matrices(X_not_scaled, 4, max_degree_node)
     U_spectral, _ = projective_synch(Z, A, root=max_degree_node)
@@ -72,7 +75,7 @@ def test_different_noise(n: int, miss_rate: float, num_repeat: int, outliers_per
 
 
 def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
-    outliers_percent = np.linspace(0, 0.8, 10)
+    outliers_percent = np.linspace(0, 0.2, 10)
     errors_spanning, errors_msp, errors_spectral = list(), list(), list()
     std_spanning, std_msp, std_spectral = list(), list(), list()
     for outliers in outliers_percent:
@@ -105,6 +108,6 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
 
 
 if __name__ == '__main__':
-    #test_different_noise(100, 0.8, 20)
-    #test_outliers(100, 0.5, 30, 1e-4)
+    test_different_noise(100, 0.8, 20)
+    test_outliers(100, 0.5, 20, 1e-4)
     test_outliers(100, 0.8, 30, 1e-4)
