@@ -75,7 +75,7 @@ def test_different_noise(n: int, miss_rate: float, num_repeat: int, outliers_per
 
 
 def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
-    outliers_percent = np.linspace(0, 0.2, 10)
+    outliers_percent = np.linspace(0, 0.8, 10)
     errors_spanning, errors_msp, errors_spectral = list(), list(), list()
     std_spanning, std_msp, std_spectral = list(), list(), list()
     for outliers in outliers_percent:
@@ -108,6 +108,6 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
 
 
 if __name__ == '__main__':
-    test_different_noise(100, 0.8, 20)
-    test_outliers(100, 0.5, 20, 1e-4)
-    test_outliers(100, 0.8, 30, 1e-4)
+    #test_different_noise(100, 0.8, 20)
+    #test_outliers(100, 0.5, 20, 1e-4)
+    test_outliers(100, 0.2, 30, 1e-4)

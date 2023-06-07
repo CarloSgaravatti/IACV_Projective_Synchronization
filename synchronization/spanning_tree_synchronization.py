@@ -4,6 +4,14 @@ import numpy as np
 
 
 def spanning_tree_sync(Z: np.ndarray, A: np.ndarray, root: int):
+    """
+    Computes the solution to the general synchronization problem in GL(d) (homography synchronization for
+    d = 3, projective synchronization for d = 4) using a spanning tree approach
+    :param Z: the dn x dn matrix containing the pairwise measurements between the nodes
+    :param A: the adjacency matrix of the graph
+    :param root: the nodes that will be used as the root of the spanning tree
+    :return: the solution to the synchronization problem, contained in a dn x d matrix
+    """
     n = A.shape[0]
     d = int(Z.shape[0] / n)
     sparse_A = csr_matrix(A)
