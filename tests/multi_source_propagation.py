@@ -110,4 +110,4 @@ def test_outliers(n: int, miss_rate: float, num_repeat: int, noise: float):
 if __name__ == '__main__':
     #test_different_noise(100, 0.8, 20)
     #test_outliers(100, 0.5, 20, 1e-4)
-    test_outliers(100, 0.2, 30, 1e-4)
+    test_outliers(100, 0.8, 30, 1e-4)

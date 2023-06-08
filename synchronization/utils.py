@@ -35,7 +35,7 @@ def normalize_matrices(X: np.ndarray):
         x_vec_sum = x_vec.sum()
         X_normalized[d*i: d*(i + 1), :] = X[d*i: d*(i + 1), :] / x_vec_sum
         norm = np.linalg.norm(x_vec / x_vec_sum)
-        X_normalized[d * i: d * (i + 1), :] = X[d * i: d * (i + 1), :] / norm
+        X_normalized[d * i: d * (i + 1), :] = X_normalized[d * i: d * (i + 1), :] / norm
     return X_normalized
 
 
