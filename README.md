@@ -17,3 +17,23 @@ This project extends some techniques used to solve the image mosaicing problem t
 Details on the techniques used in this project can be found [here](docs/report.pdf)
 
 ## References
+
+<a id="1">[1]</a> 
+F. Arrigoni and A. Fusiello. 
+Synchronization problems in computer vision with closed-form solutions. 
+International Journal of Computer Vision, 128, 01 2020.
+
+<a id="2">[2]</a> 
+E. Santellani, E. Maset, and A. Fusiello.
+Seamless image mosaicking via synchronization.
+ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial Information Sciences, IV-2:247–254, 2018.
+
+<a id="3">[3]</a> 
+P. Schroeder, A. Bartoli, P. Georgel, and N. Navab.
+Closed-form solutions to multiple-view homography estimation.
+In 2011 IEEE Workshop on Applications of Computer Vision (WACV), pages 650–657, 2011.
+
+<a id="4">[4]</a> 
+L. Yang, H. Li, J. A. Rahim, Z. Cui, and P. Tan.
+End-to-end rotation averaging with multi-source propagation.
+In 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 11769–11778, 2021.
